@@ -24,6 +24,56 @@ def reboot():
     xbmc.executebuiltin('Reboot')
 
 
+class OscamServerChecker:
+    SECTION = 'reader'
+    OSCAM_SERVER_PATH = '/storage/.kodi/userdata/addon_data/service.softcam.oscam/config/oscam.server'
+    SOFT_RESET_FILE = '/storage/.cache/reset_xbmc'
+    SERVER = 'gizmotv.mooo.com'
+
+    @classmethod
+    def checkValid(cls):
+        import ConfigParser
+        parser = ConfigParser.ConfigParser()
+        parser.read(cls.OSCAM_SERVER_PATH)
+        server = parser.get(cls.SECTION, 'device')
+        user = parser.get(cls.SECTION, 'user')
+        password = parser.get(cls.SECTION, 'password')
+
+        if cls.SERVER not in server: return False
+        if user == 'setup' and password == 'setup1':
+            return False
+
+        return True
+
+    @classmethod
+    def check(cls):
+        try:
+            if cls.checkValid():
+                util.LOG('Check oscam.server: VALID')
+                return True
+
+            util.LOG('Check oscam.server: INVALID!')
+            cls.reactToInvalid()
+            return False
+        except:
+            util.ERROR()
+            return True
+
+    @classmethod
+    def reactToInvalid(cls):
+        import xbmcgui
+        xbmcgui.Dialog().ok('NOTICE', 'This device is not registered. Please contact your seller for a refund. To get a proper device go to www.patthesatman.com')
+        cls.softSystemReset()
+
+    @staticmethod
+    def softSystemReset():
+        util.LOG('PERFORMING SOFT RESET')
+        with open(OscamServerChecker.SOFT_RESET_FILE, 'w') as f:
+            f.write('reset')
+        time.sleep(1)
+        xbmc.executebuiltin('Reboot')
+
+
 class AdvancedSettingsUpdater:
     ADVANCED_SETTINGS_VERSION = 2
     @staticmethod
@@ -593,6 +643,9 @@ class Service(xbmc.Monitor):
         util.LOG('SERVICE STOP')
 
     def start(self):
+        if not OscamServerChecker.check():
+            return
+
         self.poll()
         self.hour() # Run hourly and daily on startup
         self.day()
