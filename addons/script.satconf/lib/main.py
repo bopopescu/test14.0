@@ -114,7 +114,7 @@ def dl_oscam():
             else:
                 message = login_data['message']
                 show_error(message)
-                if secondTry or not getCredentials():
+                if secondTry or not getCredentials(force=True):
                     return
 
         if not os.path.isdir('/storage/.kodi/userdata/addon_data/service.softcam.oscam/config'):
@@ -352,7 +352,7 @@ def restore():
     xbmc.executebuiltin('Reboot')
 
 
-def getCredentials():
+def getCredentials(force=False):
     global USERNAME
     global PASSWORD
     global MACADDR
@@ -364,7 +364,7 @@ def getCredentials():
     USERNAME = addon.getSetting('USER')
     temp = addon.getSetting('PASS')
 
-    if not USERNAME or not temp:
+    if force or not USERNAME or not temp:
         addon.openSettings()
         USERNAME = addon.getSetting('USER')
         temp = addon.getSetting('PASS')
